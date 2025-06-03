@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自定义视频音频播放器</title>
+    <script>
+        // const VIDEO_URL = 'http://localhost:8000/demo01.mp4';
+        const VIDEO_URL = 'http://localhost:8000/demo02.mp4';
+        // const VIDEO_URL = 'http://localhost:8000/demo03.mp4';
+    </script>
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .video-box {
+            width: 100%;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+        }
+
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .control-group h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .radio-item input[type="radio"] {
+            margin: 0;
+        }
+
+        .radio-item label {
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f5f5f5;
+        }
+
+        button:hover {
+            background: #eee;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            max-width: 400px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            width: 150px;
+        }
+
+        #visualizer {
+            border: 1px solid #eee;
+            margin-top: 20px;
+            width: 100%;
+            height: 150px;
+            border-radius: 4px;
+        }
+
+        .status {
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>自定义视频音频播放器</h2>
+
+        <div class="status" id="statusText">正在自动加载视频...</div>
+
+        <div class="video-box">
+            <video id="video" crossorigin="anonymous"></video>
+        </div>
+
+        <div class="controls">
+            <button id="playBtn" disabled>播放</button>
+            <button id="pauseBtn" disabled>暂停</button>
+            <button id="muteBtn">静音</button>
+            <button id="testAudioBtn">测试音频</button>
+            <span>音量：</span>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <h4>音轨选择</h4>
+            <div class="radio-group" id="trackRadioGroup">
+                <div class="radio-item">
+                    <input type="radio" id="track0" name="audioTrack" value="0" checked>
+                    <label for="track0">默认音轨</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4>播放速度</h4>
+            <div class="radio-group">
+                <div class="radio-item">
+                    <input type="radio" id="rate05" name="playbackRate" value="0.5">
+                    <label for="rate05">0.5x</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="rate075" name="playbackRate" value="0.75">
+                    <label for="rate075">0.75x</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="rate1" name="playbackRate" value="1" checked>
+                    <label for="rate1">1x (正常)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="rate125" name="playbackRate" value="1.25">
+                    <label for="rate125">1.25x</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="rate15" name="playbackRate" value="1.5">
+                    <label for="rate15">1.5x</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="rate2" name="playbackRate" value="2">
+                    <label for="rate2">2x</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h4>音调变换</h4>
+            <div class="radio-group">
+                <div class="radio-item">
+                    <input type="radio" id="pitch-12" name="pitchShift" value="-12">
+                    <label for="pitch-12">降一个八度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch-7" name="pitchShift" value="-7">
+                    <label for="pitch-7">降五度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch-5" name="pitchShift" value="-5">
+                    <label for="pitch-5">降四度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch-3" name="pitchShift" value="-3">
+                    <label for="pitch-3">降小三度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch-2" name="pitchShift" value="-2">
+                    <label for="pitch-2">降大二度 (C→B♭)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch-1" name="pitchShift" value="-1">
+                    <label for="pitch-1">降小二度 (C→B)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch0" name="pitchShift" value="0" checked>
+                    <label for="pitch0">原调</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch1" name="pitchShift" value="1">
+                    <label for="pitch1">升小二度 (C→C#)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch2" name="pitchShift" value="2">
+                    <label for="pitch2">升大二度 (C→D)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch3" name="pitchShift" value="3">
+                    <label for="pitch3">升小三度 (C→D#)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch4" name="pitchShift" value="4">
+                    <label for="pitch4">升大三度 (C→E)</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch5" name="pitchShift" value="5">
+                    <label for="pitch5">升四度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch7" name="pitchShift" value="7">
+                    <label for="pitch7">升五度</label>
+                </div>
+                <div class="radio-item">
+                    <input type="radio" id="pitch12" name="pitchShift" value="12">
+                    <label for="pitch12">升一个八度</label>
+                </div>
+            </div>
+        </div>
+
+        <h3>音频频谱可视化</h3>
+        <canvas id="visualizer"></canvas>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const playBtn = document.getElementById('playBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
+        const testAudioBtn = document.getElementById('testAudioBtn');
+        const volumeInput = document.getElementById('volume');
+        const trackRadioGroup = document.getElementById('trackRadioGroup');
+        const statusText = document.getElementById('statusText');
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+
+        // 固定视频地址 - 使用支持CORS的视频源
+
+        let audioContext;
+        let analyser;
+        let mediaElementSource;
+        let animationId;
+        let gainNode;
+        let soundTouchNode;
+        let currentPitchShift = 0;
+        let isAudioContextInitialized = false;
+        let isWorkletRegistered = false;
+
+        // 设置画布尺寸
+        function resizeCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+
+        // 创建 SoundTouch AudioWorkletNode (现代化音调变换)
+        async function createSoundTouchNode(audioContext) {
+            try {
+                // 首先注册 AudioWorklet 处理器
+                if (!isWorkletRegistered) {
+                    console.log('注册 SoundTouch AudioWorklet...');
+                    await audioContext.audioWorklet.addModule('https://cdn.jsdelivr.net/npm/@soundtouchjs/audio-worklet@0.2.1/dist/soundtouch-worklet.js');
+                    isWorkletRegistered = true;
+                    console.log('SoundTouch AudioWorklet 注册成功');
+                }
+
+                // 创建 AudioWorkletNode
+                const workletNode = new AudioWorkletNode(audioContext, 'soundtouch-processor');
+                console.log('SoundTouch AudioWorkletNode 创建成功');
+
+                return workletNode;
+            } catch (error) {
+                console.error('创建 SoundTouch 节点失败:', error);
+                // 如果失败，返回一个直通节点
+                return createPassThroughNode(audioContext);
+            }
+        }
+
+        // 创建直通节点作为后备方案
+        function createPassThroughNode(audioContext) {
+            console.log('创建直通节点作为后备方案');
+            const gainNode = audioContext.createGain();
+            gainNode.gain.value = 1.0;
+            return gainNode;
+        }
+
+        // 应用音调变换
+        function applyPitchShift(semitones) {
+            currentPitchShift = semitones;
+            console.log('音调变换设置为:', semitones, '半音');
+
+            // 如果有 SoundTouch 节点，设置音调参数
+            if (soundTouchNode && soundTouchNode.parameters) {
+                try {
+                    // 使用 pitchSemitones 参数来设置半音变换
+                    const pitchSemitonesParam = soundTouchNode.parameters.get('pitchSemitones');
+                    if (pitchSemitonesParam) {
+                        pitchSemitonesParam.value = semitones;
+                        console.log('SoundTouch 音调半音设置为:', semitones);
+                    } else {
+                        console.warn('pitchSemitones 参数不可用，尝试使用 pitch 参数');
+                        // 备选方案：使用 pitch 参数（比率）
+                        const pitchParam = soundTouchNode.parameters.get('pitch');
+                        if (pitchParam) {
+                            const pitchRatio = Math.pow(2, semitones / 12);
+                            pitchParam.value = pitchRatio;
+                            console.log('SoundTouch 音调比率设置为:', pitchRatio);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('设置 SoundTouch 参数时出错:', error);
+                }
+            }
+
+            // 更新状态显示
+            if (!video.paused) {
+                const pitchText = semitones === 0 ? '原调' :
+                    (semitones > 0 ? `升${semitones}半音` : `降${Math.abs(semitones)}半音`);
+                const currentRate = video.playbackRate;
+                const rateText = currentRate === 1 ? '正常速度' : `${currentRate}x 速度`;
+                statusText.textContent = `正在播放 (${rateText}, ${pitchText})`;
+            }
+        }
+
+        // 初始化音频上下文（需用户交互触发）
+        async function initAudioContext() {
+            try {
+                if (isAudioContextInitialized) {
+                    console.log('音频上下文已经初始化，跳过');
+                    return;
+                }
+
+                console.log('开始初始化音频上下文...');
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // 如果音频上下文被暂停，恢复它
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                    console.log('音频上下文已恢复');
+                }
+
+                // 创建媒体元素源
+                mediaElementSource = audioContext.createMediaElementSource(video);
+                console.log('媒体元素源已创建');
+
+                // 创建分析器节点
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 1024;  // 增加分辨率
+                analyser.smoothingTimeConstant = 0.8;
+                console.log('分析器节点已创建，fftSize:', analyser.fftSize);                // 创建增益节点（用于音量控制）
+                gainNode = audioContext.createGain();
+                gainNode.gain.value = 1.0;
+                console.log('增益节点已创建');
+
+                // 创建 SoundTouch 音调变换节点
+                soundTouchNode = await createSoundTouchNode(audioContext);
+                console.log('SoundTouch 节点已创建');
+
+                // 连接音频节点链：视频 -> SoundTouch -> 分析器 -> 增益 -> 输出
+                mediaElementSource.connect(soundTouchNode);
+                soundTouchNode.connect(analyser);
+                analyser.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                console.log('音频节点链已连接（使用 SoundTouch AudioWorklet）');
+
+                isAudioContextInitialized = true;
+                console.log('音频上下文初始化成功！');
+
+                // 立即开始可视化
+                startVisualization();
+
+                // 测试音频数据
+                setTimeout(() => {
+                    if (analyser) {
+                        const testArray = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(testArray);
+                        const hasData = testArray.some(value => value > 0);
+                        console.log('测试音频数据 - 有数据:', hasData);
+                        if (hasData) {
+                            console.log('前10个频谱值:', Array.from(testArray.slice(0, 10)));
+                        }
+                    }
+                }, 2000);
+
+            } catch (error) {
+                console.error('音频上下文初始化失败:', error);
+                // 如果音频上下文初始化失败，至少确保视频能播放
+                isAudioContextInitialized = false;
+            }
+        }
+
+        // 启动可视化
+        function startVisualization() {
+            if (!analyser) {
+                console.warn('分析器节点不存在，启动模拟可视化');
+                startMockVisualization();
+                return;
+            }
+
+            // 如果已经在运行动画，先停止
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            console.log('可视化已启动，缓冲区长度:', bufferLength);
+
+            function draw() {
+                if (!analyser) {
+                    console.warn('分析器节点丢失，停止绘制');
+                    return;
+                }
+
+                // 获取频谱数据
+                analyser.getByteFrequencyData(dataArray);
+
+                // 检查是否有音频数据
+                let hasAudioData = false;
+                let maxValue = 0;
+                for (let i = 0; i < dataArray.length; i++) {
+                    if (dataArray[i] > 0) {
+                        hasAudioData = true;
+                        maxValue = Math.max(maxValue, dataArray[i]);
+                    }
+                }
+
+                // 清空画布
+                ctx.fillStyle = 'rgb(240, 240, 240)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (hasAudioData) {
+                    // console.log('检测到音频数据，最大值:', maxValue);
+                    // 绘制频谱柱状图
+                    const barWidth = (canvas.width / bufferLength) * 2.5;
+                    let x = 0;
+
+                    for (let i = 0; i < bufferLength; i++) {
+                        const barHeight = (dataArray[i] / 255) * canvas.height;
+
+                        // 创建渐变色
+                        const hue = (i / bufferLength) * 360;
+                        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+
+                        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+                        x += barWidth;
+                    }
+                } else {
+                    // 显示"无音频数据"提示
+                    ctx.fillStyle = '#999';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('等待音频数据...', canvas.width / 2, canvas.height / 2);
+
+                    // 如果视频正在播放但没有音频数据，可能有问题
+                    if (!video.paused) {
+                        console.log('视频正在播放但没有音频数据');
+                    }
+                }
+
+                animationId = requestAnimationFrame(draw);
+            }
+
+            draw();
+        }
+
+        // 模拟可视化（当Web Audio API不可用时）
+        function startMockVisualization() {
+            console.log('启动模拟可视化');
+
+            function draw() {
+                if (video.paused) {
+                    return;
+                }
+
+                // 清空画布
+                ctx.fillStyle = 'rgb(240, 240, 240)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 生成模拟频谱数据
+                const barCount = 50;
+                const barWidth = canvas.width / barCount;
+
+                for (let i = 0; i < barCount; i++) {
+                    // 根据时间生成动态数据
+                    const time = Date.now() * 0.001;
+                    const frequency = i * 0.2;
+                    const amplitude = Math.sin(time + frequency) * 0.5 + 0.5;
+                    const barHeight = amplitude * canvas.height * 0.8;
+
+                    // 创建渐变色
+                    const hue = (i / barCount) * 360;
+                    ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+
+                    ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 1, barHeight);
+                }
+
+                animationId = requestAnimationFrame(draw);
+            }
+
+            draw();
+        }
+
+        // 停止可视化
+        function stopVisualization() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+        }
+
+        // 自动加载视频
+        async function loadVideo() {
+            statusText.textContent = '加载中...';
+            statusText.style.color = '#666';
+            playBtn.disabled = true;
+            pauseBtn.disabled = true;
+
+            try {
+                // 使用固定的视频地址，添加CORS支持
+                video.crossOrigin = 'anonymous';
+                video.src = VIDEO_URL;
+
+                console.log('开始加载视频:', VIDEO_URL);
+
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => {
+                        console.log('视频元数据加载完成');
+                        console.log('视频时长:', video.duration);
+                        console.log('视频尺寸:', video.videoWidth, 'x', video.videoHeight);
+                        resolve();
+                    };
+                    video.onerror = (e) => {
+                        console.error('视频加载错误:', e);
+                        reject(e);
+                    };
+                    // 添加超时处理
+                    setTimeout(() => reject(new Error('加载超时')), 15000);
+                });
+
+                statusText.textContent = '加载完成，可以开始播放';
+                statusText.style.color = 'green';
+                playBtn.disabled = false;
+            } catch (err) {
+                statusText.textContent = `加载失败：${err.message || '视频地址无效或网络错误'}`;
+                statusText.style.color = 'red';
+                console.error('视频加载错误:', err);
+            }
+        }
+
+        // 视频元数据加载完成后初始化音轨
+        video.addEventListener('loadedmetadata', () => {
+            console.log('视频元数据已加载');
+
+            // 检查并显示可用的音频轨道信息
+            const audioTracks = video.audioTracks;
+            const textTracks = video.textTracks;
+
+            console.log('AudioTracks数量:', audioTracks ? audioTracks.length : 0);
+            console.log('TextTracks数量:', textTracks ? textTracks.length : 0);
+
+            // 清空现有的音轨选项
+            trackRadioGroup.innerHTML = '';
+
+            // 尝试使用audioTracks
+            if (audioTracks && audioTracks.length > 0) {
+                console.log('使用AudioTracks');
+                for (let i = 0; i < audioTracks.length; i++) {
+                    const track = audioTracks[i];
+                    const radioItem = document.createElement('div');
+                    radioItem.className = 'radio-item';
+
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'audioTrack';
+                    radio.id = `track${i}`;
+                    radio.value = i;
+                    radio.checked = track.enabled;
+
+                    const label = document.createElement('label');
+                    label.htmlFor = `track${i}`;
+                    label.textContent = track.label || track.language || `音轨 ${i + 1}`;
+
+                    radioItem.appendChild(radio);
+                    radioItem.appendChild(label);
+                    trackRadioGroup.appendChild(radioItem);
+
+                    console.log(`音轨 ${i}:`, track.label, track.language, track.enabled);
+
+                    // 添加音轨切换事件
+                    radio.addEventListener('change', () => {
+                        if (radio.checked) {
+                            console.log('切换到音轨:', i);
+                            // 禁用所有音轨
+                            for (let j = 0; j < audioTracks.length; j++) {
+                                audioTracks[j].enabled = false;
+                            }
+                            // 启用选中的音轨
+                            audioTracks[i].enabled = true;
+                            console.log('已启用音轨:', i);
+                        }
+                    });
+                }
+            }
+            // 如果没有多个音轨，显示默认选项
+            else {
+                const radioItem = document.createElement('div');
+                radioItem.className = 'radio-item';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'audioTrack';
+                radio.id = 'track0';
+                radio.value = '0';
+                radio.checked = true;
+
+                const label = document.createElement('label');
+                label.htmlFor = 'track0';
+                label.textContent = '默认音轨';
+
+                radioItem.appendChild(radio);
+                radioItem.appendChild(label);
+                trackRadioGroup.appendChild(radioItem);
+                console.log('只有一个默认音轨');
+            }
+        });
+
+        // 播放控制
+        playBtn.addEventListener('click', async () => {
+            try {
+                console.log('点击播放按钮');
+
+                // 初始化音频上下文（必须在用户交互后创建）
+                if (!isAudioContextInitialized) {
+                    console.log('初始化音频上下文...');
+                    await initAudioContext();
+                }
+
+                // 确保音频上下文在运行状态
+                if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                    console.log('音频上下文已恢复');
+                }
+
+                // 播放视频
+                await video.play();
+                console.log('视频开始播放');
+
+                // 更新按钮状态
+                playBtn.disabled = true;
+                pauseBtn.disabled = false;
+
+                statusText.textContent = '正在播放，音频频谱可视化已启动';
+                statusText.style.color = 'green';
+
+            } catch (err) {
+                console.error('播放失败:', err);
+                statusText.textContent = `播放失败：${err.message}`;
+                statusText.style.color = 'red';
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            video.pause();
+
+            // 更新按钮状态
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            statusText.textContent = '视频已暂停';
+            statusText.style.color = '#666';
+        });
+
+        muteBtn.addEventListener('click', () => {
+            video.muted = !video.muted;
+            muteBtn.textContent = video.muted ? '取消静音' : '静音';
+        });
+
+        // 测试音频按钮
+        testAudioBtn.addEventListener('click', async () => {
+            console.log('=== 音频调试信息 ===');
+            console.log('视频元素状态:');
+            console.log('- 是否暂停:', video.paused);
+            console.log('- 是否静音:', video.muted);
+            console.log('- 音量:', video.volume);
+            console.log('- 当前时间:', video.currentTime);
+            console.log('- 总时长:', video.duration);
+
+            console.log('音频上下文状态:');
+            console.log('- 是否初始化:', isAudioContextInitialized);
+            console.log('- 状态:', audioContext ? audioContext.state : '未创建');
+            console.log('- 采样率:', audioContext ? audioContext.sampleRate : 'N/A');
+
+            console.log('音频节点状态:');
+            console.log('- MediaElementSource:', !!mediaElementSource);
+            console.log('- Analyser:', !!analyser);
+            console.log('- GainNode:', !!gainNode);
+
+            if (analyser) {
+                const testData = new Uint8Array(analyser.frequencyBinCount);
+                analyser.getByteFrequencyData(testData);
+                const hasData = testData.some(v => v > 0);
+                const maxVal = Math.max(...testData);
+                console.log('- 频谱数据:', hasData ? `有数据 (最大值: ${maxVal})` : '无数据');
+            }
+
+            // 尝试播放测试音频
+            if (!video.paused) {
+                console.log('视频正在播放，检查音频输出...');
+                setTimeout(() => {
+                    if (analyser) {
+                        const data = new Uint8Array(analyser.frequencyBinCount);
+                        analyser.getByteFrequencyData(data);
+                        console.log('延迟检查频谱数据:', data.slice(0, 10));
+                    }
+                }, 1000);
+            }
+        });
+
+        volumeInput.addEventListener('input', (e) => {
+            const volume = parseFloat(e.target.value);
+            video.volume = volume;
+
+            // 如果有增益节点，也同步更新
+            if (gainNode) {
+                gainNode.gain.value = volume;
+                console.log('音量已更新:', volume);
+            }
+        });
+
+        // 播放速度控制
+        document.querySelectorAll('input[name="playbackRate"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    const playbackRate = parseFloat(e.target.value);
+                    video.playbackRate = playbackRate;
+
+                    const rateText = playbackRate === 1 ? '正常速度' : `${playbackRate}x 速度`;
+                    console.log('播放速度已改变为:', rateText);
+
+                    // 如果视频正在播放，显示速度变化提示
+                    if (!video.paused) {
+                        const currentPitchShift = document.querySelector('input[name="pitchShift"]:checked')?.value || '0';
+                        const pitchText = currentPitchShift === '0' ? '原调' :
+                            (parseInt(currentPitchShift) > 0 ? `升${currentPitchShift}半音` : `降${Math.abs(parseInt(currentPitchShift))}半音`);
+                        statusText.textContent = `正在播放 (${rateText}, ${pitchText})`;
+                        statusText.style.color = '#4CAF50';
+                    }
+                }
+            });
+        });
+
+        // 音调变换控制
+        document.querySelectorAll('input[name="pitchShift"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    const pitchShift = parseInt(e.target.value);
+                    applyPitchShift(pitchShift);
+                }
+            });
+        });
+
+        // 监听视频播放状态变化
+        video.addEventListener('play', async () => {
+            console.log('视频播放事件触发');
+
+            // 更新按钮状态
+            playBtn.disabled = true;
+            pauseBtn.disabled = false;
+
+            // 更新状态显示，包含当前播放速度和音调
+            const currentRate = video.playbackRate;
+            const rateText = currentRate === 1 ? '正常速度' : `${currentRate}x 速度`;
+            const currentPitchShift = document.querySelector('input[name="pitchShift"]:checked')?.value || '0';
+            const pitchText = currentPitchShift === '0' ? '原调' :
+                (parseInt(currentPitchShift) > 0 ? `升${currentPitchShift}半音` : `降${Math.abs(parseInt(currentPitchShift))}半音`);
+            statusText.textContent = `正在播放 (${rateText}, ${pitchText})`;
+            statusText.style.color = '#4CAF50';
+
+            // 检查音频状态
+            console.log('视频音量:', video.volume, '静音状态:', video.muted);
+            console.log('音频上下文状态:', audioContext ? audioContext.state : '未初始化');
+
+            if (audioContext && audioContext.state === 'suspended') {
+                await audioContext.resume();
+                console.log('音频上下文在播放时恢复');
+            }
+
+            if (isAudioContextInitialized && analyser) {
+                console.log('重新启动可视化');
+                startVisualization();
+            }
+        });
+
+        video.addEventListener('pause', () => {
+            console.log('视频暂停');
+            stopVisualization();
+
+            // 更新按钮状态
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            statusText.textContent = '视频已暂停';
+            statusText.style.color = '#666';
+        });
+
+        video.addEventListener('ended', () => {
+            console.log('视频播放结束');
+            stopVisualization();
+
+            // 重置按钮状态
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+
+            statusText.textContent = '播放结束';
+            statusText.style.color = '#666';
+        });
+
+        // 添加音频相关的事件监听
+        video.addEventListener('volumechange', () => {
+            console.log('音量变化:', video.volume, '静音:', video.muted);
+        });
+
+        video.addEventListener('loadstart', () => {
+            console.log('开始加载视频');
+        });
+
+        video.addEventListener('canplay', () => {
+            console.log('视频可以播放');
+            console.log('视频时长:', video.duration);
+            console.log('视频是否有音频:', !video.muted && video.volume > 0);
+        });
+
+        // 画布尺寸适配
+        window.addEventListener('resize', resizeCanvas);
+
+        // 初始化画布尺寸
+        resizeCanvas();
+
+
+        // 如果DOM已经加载完成，立即加载视频
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadVideo);
+        } else {
+            loadVideo();
+        }
+    </script>
+</body>
+
+</html>
