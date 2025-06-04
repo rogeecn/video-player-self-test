@@ -181,7 +181,8 @@
         <div class="status" id="statusText">正在自动加载视频...</div>
 
         <div class="video-box">
-            <video id="video" class="video-js vjs-default-skin" crossorigin="anonymous" preload="auto" data-setup='{}'>
+            <video id="video" class="video-js vjs-default-skin" crossorigin="anonymous" controls preload="auto"
+                data-setup='{}'>
                 <p class="vjs-no-js">
                     要查看此视频，请启用 JavaScript，并考虑升级到
                     <a href="https://videojs.com/html5-video-support/" target="_blank">
