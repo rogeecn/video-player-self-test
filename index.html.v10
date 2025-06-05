@@ -15,16 +15,11 @@
         .video-box {
             width: 100%;
             position: relative;
-            aspect-ratio: 16/9;
-            /* 移除 padding-top */
         }
 
         .video-js {
             width: 100%;
-            height: 100%;
             border-radius: 8px;
-            /* 移除绝对定位 */
-            aspect-ratio: 16/9;
         }
 
         .video-js .vjs-tech {
@@ -205,11 +200,6 @@
         </div>
 
         <div class="controls">
-            <label for="videoSelect">选择视频：</label>
-            <select id="videoSelect"></select>
-        </div>
-
-        <div class="controls">
             <button id="playBtn" disabled>播放</button>
             <button id="pauseBtn" disabled>暂停</button>
             <button id="muteBtn">静音</button>
@@ -352,7 +342,6 @@
         const progressFill = document.getElementById('progressFill');
         const currentTimeDisplay = document.getElementById('currentTime');
         const durationDisplay = document.getElementById('duration');
-        const videoSelect = document.getElementById('videoSelect');
 
         // 固定视频地址 - 使用支持CORS的视频源
 
@@ -365,10 +354,6 @@
         let currentPitchShift = 0;
         let isAudioContextInitialized = false;
         let isWorkletRegistered = false;
-
-        let currentVideoIndex = 0;
-        let VIDEO_URL = videos[0].src;
-        let VIDEO_TYPE = videos[0].type;
 
         // 设置画布尺寸
         function resizeCanvas() {
@@ -689,7 +674,7 @@
                 // 设置视频源
                 player.src({
                     src: VIDEO_URL,
-                    type: VIDEO_TYPE
+                    type: 'video/mp4'
                 });
 
                 console.log('视频源已设置:', VIDEO_URL);
@@ -749,44 +734,6 @@
             return player;
         }
 
-        // 初始化视频选择下拉框
-        function initVideoSelect() {
-            videoSelect.innerHTML = '';
-            videos.forEach((v, idx) => {
-                const option = document.createElement('option');
-                option.value = idx;
-                option.textContent = v.src;
-                videoSelect.appendChild(option);
-            });
-            videoSelect.selectedIndex = 0;
-        }
-
-        // 切换视频源
-        function switchVideo(index) {
-            if (!player) return;
-            const v = videos[index];
-            if (!v) return;
-            currentVideoIndex = index;
-            VIDEO_URL = v.src;
-            VIDEO_TYPE = v.type;
-            player.pause();
-            player.src({ src: VIDEO_URL, type: VIDEO_TYPE });
-            player.load();
-            player.currentTime(0);
-            playBtn.disabled = false;
-            pauseBtn.disabled = true;
-            statusText.textContent = '已切换视频，等待播放';
-            statusText.style.color = '#666';
-            // 重置进度条
-            updateProgress();
-        }
-
-        // 监听下拉框变化
-        videoSelect.addEventListener('change', (e) => {
-            const idx = parseInt(e.target.value);
-            switchVideo(idx);
-        });
-
         // 处理音轨信息
         function handleAudioTracks() {
             console.log('处理音轨信息...');
@@ -794,18 +741,14 @@
             // 清空现有的音轨选项
             trackRadioGroup.innerHTML = '';
 
-            // 优先用 video.js 的 audioTracks API
-            let audioTracks = null;
-            if (player && typeof player.audioTracks === 'function') {
-                audioTracks = player.audioTracks();
-            } else if (video && video.audioTracks) {
-                audioTracks = video.audioTracks;
-            }
+            // 获取音轨信息
+            const audioTracks = video.audioTracks;
 
             if (audioTracks && audioTracks.length > 0) {
                 console.log('发现', audioTracks.length, '个音轨');
+
                 for (let i = 0; i < audioTracks.length; i++) {
-                    const track = audioTracks[i] || audioTracks.item?.(i);
+                    const track = audioTracks[i];
                     const radioItem = document.createElement('div');
                     radioItem.className = 'radio-item';
 
@@ -814,7 +757,7 @@
                     radio.name = 'audioTrack';
                     radio.id = `track${i}`;
                     radio.value = i;
-                    radio.checked = track.enabled || track.selected;
+                    radio.checked = track.enabled;
 
                     const label = document.createElement('label');
                     label.htmlFor = `track${i}`;
@@ -824,7 +767,7 @@
                     radioItem.appendChild(label);
                     trackRadioGroup.appendChild(radioItem);
 
-                    console.log(`音轨 ${i}:`, track.label, track.language, track.enabled || track.selected);
+                    console.log(`音轨 ${i}:`, track.label, track.language, track.enabled);
 
                     // 添加音轨切换事件
                     radio.addEventListener('change', () => {
@@ -832,28 +775,10 @@
                             console.log('切换到音轨:', i);
                             // 禁用所有音轨
                             for (let j = 0; j < audioTracks.length; j++) {
-                                if (audioTracks[j]) {
-                                    audioTracks[j].enabled = false;
-                                    if (typeof audioTracks[j].selected !== 'undefined') audioTracks[j].selected = false;
-                                } else if (audioTracks.item) {
-                                    const t = audioTracks.item(j);
-                                    if (t) {
-                                        t.enabled = false;
-                                        if (typeof t.selected !== 'undefined') t.selected = false;
-                                    }
-                                }
+                                audioTracks[j].enabled = false;
                             }
                             // 启用选中的音轨
-                            if (audioTracks[i]) {
-                                audioTracks[i].enabled = true;
-                                if (typeof audioTracks[i].selected !== 'undefined') audioTracks[i].selected = true;
-                            } else if (audioTracks.item) {
-                                const t = audioTracks.item(i);
-                                if (t) {
-                                    t.enabled = true;
-                                    if (typeof t.selected !== 'undefined') t.selected = true;
-                                }
-                            }
+                            audioTracks[i].enabled = true;
                         }
                     });
                 }
@@ -1089,7 +1014,6 @@
         // 初始化 Video.js 播放器
         document.addEventListener('DOMContentLoaded', () => {
             console.log('DOM 加载完成，初始化 Video.js...');
-            initVideoSelect();
             initVideoPlayer();
         });
     </script>
