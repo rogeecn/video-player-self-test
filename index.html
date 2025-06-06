@@ -169,10 +169,12 @@
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/video.js@8.22.0/dist/video.min.js"></script>
+    <script src="https://unpkg.com/@videojs/http-streaming@3.15.0/dist/videojs-http-streaming.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/video.js@8.22.0/dist/video-js.min.css">
     <script>
         const videos = [
-            { src: 'hls/master.m3u8', type: 'application/x-mpegURL' },
+            { src: 'https://d2zihajmogu5jn.cloudfront.net/bipbop-advanced/bipbop_16x9_variant.m3u8', type: 'application/x-mpegURL' },
+            { src: 'hls/main.m3u8', type: 'application/x-mpegURL' },
             { src: 'demo01.mp4', type: 'video/mp4' },
             { src: 'demo02.mp4', type: 'video/mp4' },
             { src: 'demo03.mp4', type: 'video/mp4' }
@@ -671,13 +673,20 @@
             console.log('初始化 Video.js 播放器...');
 
             player = videojs('video', {
-                controls: true,
+                controls: false,
                 fluid: true,
                 responsive: true,
                 playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
                 plugins: {
                     // 可以在这里添加插件配置
-                }
+                },
+                // html5: {
+                //     vhs: {
+                //         overrideNative: !videojs.browser.IS_SAFARI,
+                //     },
+                //     nativeAudioTracks: false,
+                //     nativeVideoTracks: false
+                // }
             });
 
             // 获取底层的 HTML5 video 元素
@@ -790,11 +799,7 @@
         // 处理音轨信息
         function handleAudioTracks() {
             console.log('处理音轨信息...');
-
-            // 清空现有的音轨选项
             trackRadioGroup.innerHTML = '';
-
-            // 优先用 video.js 的 audioTracks API
             let audioTracks = null;
             if (player && typeof player.audioTracks === 'function') {
                 audioTracks = player.audioTracks();
@@ -824,10 +829,8 @@
                     radioItem.appendChild(label);
                     trackRadioGroup.appendChild(radioItem);
 
-                    console.log(`音轨 ${i}:`, track.label, track.language, track.enabled || track.selected);
-
                     // 添加音轨切换事件
-                    radio.addEventListener('change', () => {
+                    radio.addEventListener('change', async () => {
                         if (radio.checked) {
                             console.log('切换到音轨:', i);
                             // 禁用所有音轨
@@ -854,29 +857,43 @@
                                     if (typeof t.selected !== 'undefined') t.selected = true;
                                 }
                             }
+                            // 立即播放，确保切换生效
+                            if (player && typeof player.play === 'function') {
+                                try {
+                                    await player.play();
+                                    console.log('切换音轨后已自动播放');
+                                } catch (e) {
+                                    console.warn('切换音轨后自动播放失败:', e);
+                                }
+                            }
                         }
+                    });
+                }
+                // 监听音轨切换事件调试
+                if (audioTracks.addEventListener) {
+                    audioTracks.addEventListener('change', (e) => {
+                        console.log('audioTracks change 事件触发', e);
+                    });
+                    audioTracks.addEventListener('selectedchange', (e) => {
+                        console.log('audioTracks selectedchange 事件触发', e);
                     });
                 }
             } else {
                 // 默认音轨
                 const radioItem = document.createElement('div');
                 radioItem.className = 'radio-item';
-
                 const radio = document.createElement('input');
                 radio.type = 'radio';
                 radio.name = 'audioTrack';
                 radio.id = 'track0';
                 radio.value = '0';
                 radio.checked = true;
-
                 const label = document.createElement('label');
                 label.htmlFor = 'track0';
                 label.textContent = '默认音轨';
-
                 radioItem.appendChild(radio);
                 radioItem.appendChild(label);
                 trackRadioGroup.appendChild(radioItem);
-
                 console.log('使用默认音轨配置');
             }
         }
