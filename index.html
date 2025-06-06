@@ -214,6 +214,18 @@
                 <span>循环播放</span>
             </label>
         </div>
+        <div class="controls" id="abLoopControls">
+            <label style="margin-right:8px;">区间播放：</label>
+            <button id="setA">设置A点</button>
+            <span id="aTime" style="min-width:60px;display:inline-block;">A: --:--</span>
+            <button id="setB">设置B点</button>
+            <span id="bTime" style="min-width:60px;display:inline-block;">B: --:--</span>
+            <button id="clearAB">清除区间</button>
+            <label style="margin-left:12px;display:flex;align-items:center;gap:4px;">
+                <input type="checkbox" id="abLoopCheckbox">
+                <span>启用区间循环</span>
+            </label>
+        </div>
 
         <div class="controls">
             <button id="playBtn" disabled>播放</button>
@@ -360,6 +372,15 @@
         const durationDisplay = document.getElementById('duration');
         const videoSelect = document.getElementById('videoSelect');
         const loopCheckbox = document.getElementById('loopCheckbox');
+        const abLoopCheckbox = document.getElementById('abLoopCheckbox');
+        const setA = document.getElementById('setA');
+        const setB = document.getElementById('setB');
+        const clearAB = document.getElementById('clearAB');
+        const aTime = document.getElementById('aTime');
+        const bTime = document.getElementById('bTime');
+        let abLoopA = null;
+        let abLoopB = null;
+        let abLoopActive = false;
 
         // 固定视频地址 - 使用支持CORS的视频源
 
@@ -376,6 +397,7 @@
         let currentVideoIndex = 0;
         let VIDEO_URL = videos[0].src;
         let VIDEO_TYPE = videos[0].type;
+
 
         // 设置画布尺寸
         function resizeCanvas() {
@@ -748,6 +770,7 @@
 
             player.on('timeupdate', () => {
                 updateProgress();
+                abLoopCheck();
             });
 
             player.on('volumechange', () => {
@@ -1136,6 +1159,55 @@
                 console.log('循环播放已', e.target.checked ? '启用' : '禁用');
             }
         });
+
+        // A-B 区间循环相关变量
+        let aPoint = 0;
+        let bPoint = 0;
+        let isABLoopEnabled = false;
+
+        // 设置 A 点
+        document.getElementById('setA').addEventListener('click', () => {
+            aPoint = player.currentTime();
+            document.getElementById('aTime').textContent = `A: ${formatTime(aPoint)}`;
+            console.log('设置 A 点:', aPoint);
+        });
+
+        // 设置 B 点
+        document.getElementById('setB').addEventListener('click', () => {
+            bPoint = player.currentTime();
+            document.getElementById('bTime').textContent = `B: ${formatTime(bPoint)}`;
+            console.log('设置 B 点:', bPoint);
+        });
+
+        // 清除 A-B 区间
+        document.getElementById('clearAB').addEventListener('click', () => {
+            aPoint = 0;
+            bPoint = 0;
+            isABLoopEnabled = false;
+            document.getElementById('aTime').textContent = 'A: --:--';
+            document.getElementById('bTime').textContent = 'B: --:--';
+            console.log('清除 A-B 区间');
+        });
+
+        // 启用/禁用 A-B 区间循环
+        document.getElementById('abLoopCheckbox').addEventListener('change', (e) => {
+            isABLoopEnabled = e.target.checked;
+            if (isABLoopEnabled) {
+                console.log('启用 A-B 区间循环');
+            } else {
+                console.log('禁用 A-B 区间循环');
+            }
+        });
+
+        // 在播放进度更新时处理区间循环
+        function abLoopCheck() {
+            if (isABLoopEnabled && aPoint !== 0 && bPoint !== 0 && player) {
+                if (player.currentTime() >= bPoint) {
+                    player.currentTime(aPoint);
+                    player.play();
+                }
+            }
+        }
     </script>
 </body>
 
