@@ -5,3 +5,4 @@ hls/*
 *.ts
 *.aac
 http_demo
+!assets/*.mp3
