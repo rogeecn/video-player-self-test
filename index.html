@@ -837,6 +837,9 @@
             switchVideo(idx);
         });
 
+        let lastAudioTracks = null;
+        let audioTracksListeners = [];
+
         // 处理音轨信息
         function handleAudioTracks() {
             console.log('处理音轨信息...');
@@ -847,6 +850,17 @@
             } else if (video && video.audioTracks) {
                 audioTracks = video.audioTracks;
             }
+
+            // 移除上一次注册的 audioTracks 事件监听器，防止重复注册
+            if (lastAudioTracks && audioTracksListeners.length > 0) {
+                audioTracksListeners.forEach(({ type, listener }) => {
+                    if (lastAudioTracks.removeEventListener) {
+                        lastAudioTracks.removeEventListener(type, listener);
+                    }
+                });
+                audioTracksListeners = [];
+            }
+            lastAudioTracks = audioTracks;
 
             if (audioTracks && audioTracks.length > 0) {
                 console.log('发现', audioTracks.length, '个音轨');
@@ -910,14 +924,18 @@
                         }
                     });
                 }
-                // 监听音轨切换事件调试
+                // 只注册一次 audioTracks 的事件监听器
                 if (audioTracks.addEventListener) {
-                    audioTracks.addEventListener('change', (e) => {
+                    const changeListener = (e) => {
                         console.log('audioTracks change 事件触发', e);
-                    });
-                    audioTracks.addEventListener('selectedchange', (e) => {
+                    };
+                    const selectedChangeListener = (e) => {
                         console.log('audioTracks selectedchange 事件触发', e);
-                    });
+                    };
+                    audioTracks.addEventListener('change', changeListener);
+                    audioTracks.addEventListener('selectedchange', selectedChangeListener);
+                    audioTracksListeners.push({ type: 'change', listener: changeListener });
+                    audioTracksListeners.push({ type: 'selectedchange', listener: selectedChangeListener });
                 }
             } else {
                 // 默认音轨
