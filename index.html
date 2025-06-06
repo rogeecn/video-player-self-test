@@ -440,6 +440,11 @@
         // 创建 SoundTouch AudioWorkletNode (现代化音调变换)
         async function createSoundTouchNode(audioContext) {
             try {
+                // 检查 AudioWorklet 支持
+                if (!audioContext.audioWorklet) {
+                    console.warn('当前浏览器不支持 AudioWorklet，音调变换不可用，使用直通节点');
+                    return createPassThroughNode(audioContext);
+                }
                 // 首先注册 AudioWorklet 处理器
                 if (!isWorkletRegistered) {
                     console.log('注册 SoundTouch AudioWorklet...');
@@ -447,11 +452,9 @@
                     isWorkletRegistered = true;
                     console.log('SoundTouch AudioWorklet 注册成功');
                 }
-
                 // 创建 AudioWorkletNode
                 const workletNode = new AudioWorkletNode(audioContext, 'soundtouch-processor');
                 console.log('SoundTouch AudioWorkletNode 创建成功');
-
                 return workletNode;
             } catch (error) {
                 console.error('创建 SoundTouch 节点失败:', error);
