@@ -209,6 +209,10 @@
         <div class="controls">
             <label for="videoSelect">选择视频：</label>
             <select id="videoSelect"></select>
+            <label style="margin-left:20px;display:flex;align-items:center;gap:4px;">
+                <input type="checkbox" id="loopCheckbox">
+                <span>循环播放</span>
+            </label>
         </div>
 
         <div class="controls">
@@ -355,6 +359,7 @@
         const currentTimeDisplay = document.getElementById('currentTime');
         const durationDisplay = document.getElementById('duration');
         const videoSelect = document.getElementById('videoSelect');
+        const loopCheckbox = document.getElementById('loopCheckbox');
 
         // 固定视频地址 - 使用支持CORS的视频源
 
@@ -708,6 +713,9 @@
                 // 启用控制按钮
                 playBtn.disabled = false;
                 pauseBtn.disabled = false;
+
+                // 初始化循环播放状态
+                player.loop(loopCheckbox.checked);
             });
 
             // Video.js 事件监听
@@ -755,6 +763,13 @@
                 statusText.style.color = 'red';
             });
 
+            // 监听循环播放复选框
+            loopCheckbox.addEventListener('change', () => {
+                if (player) {
+                    player.loop(loopCheckbox.checked);
+                }
+            });
+
             return player;
         }
 
@@ -786,6 +801,10 @@
             pauseBtn.disabled = true;
             statusText.textContent = '已切换视频，等待播放';
             statusText.style.color = '#666';
+
+            // 在切换视频源时同步 loop 状态
+            player.loop(loopCheckbox.checked);
+
             // 重置进度条
             updateProgress();
         }
@@ -1108,6 +1127,14 @@
             console.log('DOM 加载完成，初始化 Video.js...');
             initVideoSelect();
             initVideoPlayer();
+        });
+
+        // 循环播放复选框控制
+        loopCheckbox.addEventListener('change', (e) => {
+            if (player) {
+                player.loop(e.target.checked);
+                console.log('循环播放已', e.target.checked ? '启用' : '禁用');
+            }
         });
     </script>
 </body>
