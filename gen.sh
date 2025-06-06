@@ -4,10 +4,13 @@ mkdir -p hls/video
 ffmpeg -i assets/final.mp4 \
     -map 0:v:0 -map 0:a:0 \
     -c:v libx264 -c:a aac \
+    -vf "fps=25" \
     -f hls \
     -hls_time 10 \
-    -hls_flags single_file+split_by_time+append_list+independent_segments+discont_start \
-    -hls_segment_filename hls/video/main.ts \
+    -hls_list_size 0 \
+    -hls_flags independent_segments \
+    -hls_segment_type mpegts \
+    -hls_segment_filename hls/video/%03d.ts \
     hls/video/index.m3u8
 
 mkdir -p hls/audio
@@ -16,8 +19,10 @@ ffmpeg -i assets/final.mp4 \
     -c:a aac -vn \
     -f hls \
     -hls_time 10 \
-    -hls_flags single_file+split_by_time+append_list+independent_segments+discont_start \
-    -hls_segment_filename hls/audio/main.ts \
+    -hls_list_size 0 \
+    -hls_flags independent_segments \
+    -hls_segment_type mpegts \
+    -hls_segment_filename hls/audio/%03d.ts \
     hls/audio/index.m3u8
 
 cat >hls/variant.m3u8 <<EOF
