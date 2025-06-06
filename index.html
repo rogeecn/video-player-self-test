@@ -847,8 +847,6 @@
             let audioTracks = null;
             if (player && typeof player.audioTracks === 'function') {
                 audioTracks = player.audioTracks();
-            } else if (video && video.audioTracks) {
-                audioTracks = video.audioTracks;
             }
 
             // 移除上一次注册的 audioTracks 事件监听器，防止重复注册
@@ -874,7 +872,7 @@
                     radio.name = 'audioTrack';
                     radio.id = `track${i}`;
                     radio.value = i;
-                    radio.checked = track.enabled || track.selected;
+                    radio.checked = !!track.enabled;
 
                     const label = document.createElement('label');
                     label.htmlFor = `track${i}`;
@@ -885,42 +883,12 @@
                     trackRadioGroup.appendChild(radioItem);
 
                     // 添加音轨切换事件
-                    radio.addEventListener('change', async () => {
+                    radio.addEventListener('change', () => {
                         if (radio.checked) {
-                            console.log('切换到音轨:', i);
-                            // 禁用所有音轨
                             for (let j = 0; j < audioTracks.length; j++) {
-                                if (audioTracks[j]) {
-                                    audioTracks[j].enabled = false;
-                                    if (typeof audioTracks[j].selected !== 'undefined') audioTracks[j].selected = false;
-                                } else if (audioTracks.item) {
-                                    const t = audioTracks.item(j);
-                                    if (t) {
-                                        t.enabled = false;
-                                        if (typeof t.selected !== 'undefined') t.selected = false;
-                                    }
-                                }
+                                audioTracks[j].enabled = (j === i);
                             }
-                            // 启用选中的音轨
-                            if (audioTracks[i]) {
-                                audioTracks[i].enabled = true;
-                                if (typeof audioTracks[i].selected !== 'undefined') audioTracks[i].selected = true;
-                            } else if (audioTracks.item) {
-                                const t = audioTracks.item(i);
-                                if (t) {
-                                    t.enabled = true;
-                                    if (typeof t.selected !== 'undefined') t.selected = true;
-                                }
-                            }
-                            // 立即播放，确保切换生效
-                            if (player && typeof player.play === 'function') {
-                                try {
-                                    await player.play();
-                                    console.log('切换音轨后已自动播放');
-                                } catch (e) {
-                                    console.warn('切换音轨后自动播放失败:', e);
-                                }
-                            }
+                            console.log('切换到音轨:', i);
                         }
                     });
                 }
@@ -929,13 +897,8 @@
                     const changeListener = (e) => {
                         console.log('audioTracks change 事件触发', e);
                     };
-                    const selectedChangeListener = (e) => {
-                        console.log('audioTracks selectedchange 事件触发', e);
-                    };
                     audioTracks.addEventListener('change', changeListener);
-                    audioTracks.addEventListener('selectedchange', selectedChangeListener);
                     audioTracksListeners.push({ type: 'change', listener: changeListener });
-                    audioTracksListeners.push({ type: 'selectedchange', listener: selectedChangeListener });
                 }
             } else {
                 // 默认音轨
