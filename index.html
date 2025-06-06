@@ -885,10 +885,15 @@
                     // 添加音轨切换事件
                     radio.addEventListener('change', () => {
                         if (radio.checked) {
+                            // 先禁用所有音轨，防止原音轨残留声音
                             for (let j = 0; j < audioTracks.length; j++) {
-                                audioTracks[j].enabled = (j === i);
+                                audioTracks[j].enabled = false;
                             }
-                            console.log('切换到音轨:', i);
+                            // 强制刷新（部分浏览器/实现需要延迟）
+                            setTimeout(() => {
+                                audioTracks[i].enabled = true;
+                                console.log('切换到音轨:', i);
+                            }, 50);
                         }
                     });
                 }
